@@ -1,0 +1,89 @@
+#!/usr/bin/env ruby
+#
+# Script for running the counter server.
+#
+# Inspiration and code borrowed from
+# https://github.com/quasor/statsd
+# and
+# https://github.com/fetep/ruby-statsd
+
+require "rubygems"
+require "ostruct"
+require "optparse"
+require "counter_server"
+
+options = OpenStruct.new
+options.bind_host = '0.0.0.0'
+options.bind_port = 8126
+options.flush_interval = 10
+
+redis_options = OpenStruct.new
+redis_options.host = '127.0.0.1'
+redis_options.port = 6379
+redis_options.db = 0
+
+opts = OptionParser.new do |opts|
+  opts.on("-b", "--bind=host:port", String,
+          "host:port to bind to for UDP listener, default 0.0.0.0:8126") do |x|
+    host, port = x.split(":", 2)
+    if ! port  # just given a port
+      port = host
+      host = "0.0.0.0"
+    end
+    options.bind_host = host
+    options.bind_port = port.to_i
+  end
+
+  opts.on("-r", "--redis=host:port", String,
+          "host:port of redis server, default 127.0.0.1:6379") do |x|
+    host, port = x.split(":", 2)
+    redis_options.host = host
+    redis_options.port = port.to_i
+  end
+
+  opts.on("--redis_db=int", String,
+          "ID of Redis database (usually 1-16), default 0") do |x|
+    redis_options.db = x.to_i
+  end
+
+  opts.on("-i", "--interval=seconds", Integer,
+          "Flush interval in seconds, default 10") do |x|
+    options.flush_interval = x
+  end
+end
+
+begin
+  opts.parse!
+  if options.bind_port <= 0 or options.bind_port > 2**32
+    raise "bind port #{options.bind_port} out of range"
+  end
+  if redis_options.port <= 0 or redis_options.port > 2**32
+    raise "redis port #{redis_options.port} out of range"
+  end
+rescue
+  $stderr.puts "#{File.basename($0)}: #{$!}"
+  $stderr.puts opts
+  exit(1)
+end
+
+StatsD.initialize_redis_backend(redis_options)
+
+EM.run do
+  begin
+    EM.add_periodic_timer(options.flush_interval) do
+      EM.defer do
+        begin
+          StatsD.flush
+        rescue
+          StatsD.logger.error("trouble flushing: #{$!}")
+        end
+      end
+    end
+
+    EM.open_datagram_socket(options.bind_host, options.bind_port, StatsD)
+  rescue
+    StatsD.logger.error "Exception inside of EM.run: #{$!}"
+    EM.stop_event_loop
+    exit 1
+  end
+end
