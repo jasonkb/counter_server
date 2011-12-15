@@ -16,10 +16,15 @@ module StatsD
   @@counters = Hash.new { |h, k| h[k] = 0 }
   @@logger = Logger.new(STDERR)
   @@logger.progname = File.basename($0)
+  @@verbose = false
   @@backend = nil
 
   def self.logger
     @@logger
+  end
+
+  def self.verbose=(verbose)
+    @@verbose = verbose
   end
 
   def self.initialize_redis_backend(options)
@@ -59,6 +64,7 @@ module StatsD
   end
 
   def self.flush
+    @@logger.info "Flush" if @@verbose
     @@backend.flush do |store|
       @@counters.each do |key, increment_by|
         super_key, sub_key = key.split('.', 2)
@@ -68,7 +74,8 @@ module StatsD
         end
         restored_sub_key = sub_key.gsub(/;COLON;/, ':').gsub(/;PERIOD;/, '.')
         restored_super_key = super_key.gsub(/;COLON;/, ':').gsub(/;PERIOD;/, '.')
-        store.increment_by(super_key, sub_key, increment_by)
+        @@logger.info "Increment: #{restored_super_key}.#{restored_sub_key} += #{increment_by}" if @@verbose
+        store.increment_by(restored_super_key, restored_sub_key, increment_by)
       end
     end
 

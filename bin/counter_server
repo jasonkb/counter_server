@@ -15,6 +15,7 @@ require "counter_server"
 options = OpenStruct.new
 options.bind_host = '0.0.0.0'
 options.bind_port = 8126
+options.verbose = false
 options.flush_interval = 10
 
 redis_options = OpenStruct.new
@@ -50,6 +51,11 @@ opts = OptionParser.new do |opts|
           "Flush interval in seconds, default 10") do |x|
     options.flush_interval = x
   end
+
+  opts.on("-v", "--[no-]verbose",
+          "If true, log counters to stderr on flush") do |v|
+    options.verbose = v
+  end
 end
 
 begin
@@ -66,7 +72,10 @@ rescue
   exit(1)
 end
 
+StatsD.verbose = options.verbose
 StatsD.initialize_redis_backend(redis_options)
+
+$stderr.puts "Counter Server started!"
 
 EM.run do
   begin
