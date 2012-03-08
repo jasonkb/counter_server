@@ -15,7 +15,7 @@ require "counter_server"
 options = OpenStruct.new
 options.bind_host = '0.0.0.0'
 options.bind_port = 8126
-options.verbose = false
+options.verbose = 0
 options.flush_interval = 10
 
 redis_options = OpenStruct.new
@@ -52,8 +52,8 @@ opts = OptionParser.new do |opts|
     options.flush_interval = x
   end
 
-  opts.on("-v", "--[no-]verbose",
-          "If true, log counters to stderr on flush") do |v|
+  opts.on("-v", "--verbose=level", Integer,
+          "Verbosity level. 0 = no logging, 1 = one line per flush, 2 = one line per every key every flush") do |v|
     options.verbose = v
   end
 end

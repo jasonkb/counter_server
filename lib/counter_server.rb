@@ -16,7 +16,7 @@ module StatsD
   @@counters = Hash.new { |h, k| h[k] = 0 }
   @@logger = Logger.new(STDERR)
   @@logger.progname = File.basename($0)
-  @@verbose = false
+  @@verbose = 0
   @@backend = nil
 
   def self.logger
@@ -64,7 +64,7 @@ module StatsD
   end
 
   def self.flush
-    @@logger.info "Flush" if @@verbose
+    @@logger.info "Flushing #{@@counters.size} keys" if @@verbose >= 1
     @@backend.flush do |store|
       @@counters.each do |key, increment_by|
         super_key, sub_key = key.split('.', 2)
@@ -74,7 +74,7 @@ module StatsD
         end
         restored_sub_key = sub_key.gsub(/;COLON;/, ':').gsub(/;PERIOD;/, '.')
         restored_super_key = super_key.gsub(/;COLON;/, ':').gsub(/;PERIOD;/, '.')
-        @@logger.info "Increment: #{restored_super_key}.#{restored_sub_key} += #{increment_by}" if @@verbose
+        @@logger.info "Increment: #{restored_super_key}.#{restored_sub_key} += #{increment_by}" if @@verbose >= 2
         store.increment_by(restored_super_key, restored_sub_key, increment_by)
       end
     end
