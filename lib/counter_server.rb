@@ -68,7 +68,7 @@ module StatsD
     @@backend.flush do |store|
       @@counters.each do |key, increment_by|
         super_key, sub_key = key.split('.', 2)
-        if sub_key.nil?:
+        if sub_key.nil?
           sub_key = super_key
           super_key = 'c'
         end
@@ -108,6 +108,9 @@ class RedisBackend
 
   def increment_by(group_name, key, increment_by)
     @redis_client.zincrby(group_name, increment_by, key)
+
+    # Expire all keys in one month.
+    @redis_client.expire(group_name, 60 * 60 * 24 * 30)
   end
 end
 
