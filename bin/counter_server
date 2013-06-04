@@ -16,7 +16,7 @@ options = OpenStruct.new
 options.bind_host = '0.0.0.0'
 options.bind_port = 8126
 options.verbose = 0
-options.flush_interval = 10
+options.flush_interval = 60
 
 redis_options = OpenStruct.new
 redis_options.host = '127.0.0.1'

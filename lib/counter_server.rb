@@ -65,21 +65,24 @@ module StatsD
 
   def self.flush
     @@logger.info "Flushing #{@@counters.size} keys" if @@verbose >= 1
-    @@backend.flush do |store|
-      @@counters.each do |key, increment_by|
-        super_key, sub_key = key.split('.', 2)
-        if sub_key.nil?
-          sub_key = super_key
-          super_key = 'c'
+    counters = @@counters.dup
+    @@counters.clear
+
+    counters.each_slice(5000) do |counters_slice|
+      @@backend.flush do |store|
+        counters_slice.each do |key, increment_by|
+          super_key, sub_key = key.split('.', 2)
+          if sub_key.nil?
+            sub_key = super_key
+            super_key = 'c'
+          end
+          restored_sub_key = sub_key.gsub(/;COLON;/, ':').gsub(/;PERIOD;/, '.')
+          restored_super_key = super_key.gsub(/;COLON;/, ':').gsub(/;PERIOD;/, '.')
+          @@logger.info "Increment: #{restored_super_key}.#{restored_sub_key} += #{increment_by}" if @@verbose >= 2
+          store.increment_by(restored_super_key, restored_sub_key, increment_by)
         end
-        restored_sub_key = sub_key.gsub(/;COLON;/, ':').gsub(/;PERIOD;/, '.')
-        restored_super_key = super_key.gsub(/;COLON;/, ':').gsub(/;PERIOD;/, '.')
-        @@logger.info "Increment: #{restored_super_key}.#{restored_sub_key} += #{increment_by}" if @@verbose >= 2
-        store.increment_by(restored_super_key, restored_sub_key, increment_by)
       end
     end
-
-    @@counters.clear
   end
 end
 
