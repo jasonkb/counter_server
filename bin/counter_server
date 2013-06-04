@@ -75,7 +75,7 @@ end
 StatsD.verbose = options.verbose
 StatsD.initialize_redis_backend(redis_options)
 
-$stderr.puts "Counter Server started!"
+$stderr.puts "Counter Server #{CounterServer::VERSION} started!"
 
 EM.run do
   begin
