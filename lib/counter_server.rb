@@ -12,7 +12,7 @@ require "rubygems"
 require "socket"
 require 'redis'
 
-module StatsD
+module CounterServer
   @@counters = Hash.new { |h, k| h[k] = 0 }
   @@logger = Logger.new(STDERR)
   @@logger.progname = File.basename($0)

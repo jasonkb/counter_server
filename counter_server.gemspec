@@ -6,7 +6,7 @@ Gem::Specification.new do |s|
   s.name        = "counter_server"
   s.version     = CounterServer::VERSION
   s.authors     = ["Jason Katz-Brown"]
-  s.email       = ["jasonkb@airbnb.com"]
+  s.email       = ["jason@airbnb.com"]
   s.homepage    = ""
   s.summary     = %q{Counter Server -- listens for statsd-like counts and aggregates them in Redis}
   s.description = %q{Count things, saves in Redis}
